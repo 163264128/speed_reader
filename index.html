@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speed Reader</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        #word-display {
+            font-size: 16pt;
+            min-height: 24pt;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2rem;
+            letter-spacing: 1px;
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            font-size: 14pt;
+        }
+        button, select {
+            padding: 8px 16px;
+            font-size: 12pt;
+            cursor: pointer;
+            background-color: #333;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 4px;
+        }
+        button:hover, select:hover {
+            background-color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="word-display">Ready?</div>
+    
+    <div class="controls">
+        <button id="play-pause-btn">Play</button>
+        <button id="restart-btn">Restart</button>
+        
+        <label for="wpm">Speed:</label>
+        <select id="wpm">
+            <option value="200">200 WPM</option>
+            <option value="300" selected>300 WPM</option>
+            <option value="450">450 WPM</option>
+            <option value="600">600 WPM</option>
+            <option value="800">800 WPM</option>
+        </select>
+    </div>
+
+    <script>
+        const words = ["T<span style='color: red;'>h</span>is", "i<span style='color: red;'>s</span>", "<span style='color: red;'>a</span>", "demons<span style='color: red;'>t</span>ration", "<span style='color: red;'>o</span>f", "t<span style='color: red;'>h</span>e", "ra<span style='color: red;'>p</span>id", "ser<span style='color: red;'>i</span>al", "vi<span style='color: red;'>s</span>ual", "presen<span style='color: red;'>t</span>ation", "sys<span style='color: red;'>t</span>em.", "No<span style='color: red;'>t</span>ice", "h<span style='color: red;'>o</span>w", "t<span style='color: red;'>h</span>e", "mid<span style='color: red;'>d</span>le", "let<span style='color: red;'>t</span>ers", "a<span style='color: red;'>r</span>e", "highl<span style='color: red;'>i</span>ghted", "<span style='color: red;'>i</span>n", "re<span style='color: red;'>d</span>.", "F<span style='color: red;'>o</span>r", "wo<span style='color: red;'>r</span>ds", "w<span style='color: red;'>i</span>th", "a<span style='color: red;'>n</span>", "e<span style='color: red;'>v</span>en", "num<span style='color: red;'>b</span>er", "<span style='color: red;'>o</span>f", "lett<span style='color: red;'>e</span>rs,", "t<span style='color: red;'>h</span>e", "high<span style='color: red;'>l</span>ight", "alter<span style='color: red;'>n</span>ates!"];
+        let currentIndex = 0;
+        let isPlaying = false;
+        let intervalId = null;
+        
+        const displayElement = document.getElementById('word-display');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const wpmSelect = document.getElementById('wpm');
+        
+        function showNextWord() {
+            if (currentIndex >= words.length) {
+                pause();
+                displayElement.innerHTML = "Done!";
+                return;
+            }
+            displayElement.innerHTML = words[currentIndex];
+            currentIndex++;
+        }
+        
+        function play() {
+            if (currentIndex >= words.length) currentIndex = 0; // reset if at end
+            isPlaying = true;
+            playPauseBtn.innerText = "Pause";
+            
+            const wpm = parseInt(wpmSelect.value);
+            const msPerWord = 60000 / wpm; // 60,000 ms in a minute
+            
+            showNextWord(); // Show immediately
+            intervalId = setInterval(showNextWord, msPerWord);
+        }
+        
+        function pause() {
+            isPlaying = false;
+            playPauseBtn.innerText = "Play";
+            clearInterval(intervalId);
+        }
+        
+        playPauseBtn.addEventListener('click', () => {
+            if (isPlaying) pause();
+            else play();
+        });
+        
+        restartBtn.addEventListener('click', () => {
+            pause();
+            currentIndex = 0;
+            displayElement.innerHTML = "Ready?";
+        });
+        
+        wpmSelect.addEventListener('change', () => {
+            if (isPlaying) {
+                pause();
+                play();
+            }
+        });
+    </script>
+</body>
+</html>
