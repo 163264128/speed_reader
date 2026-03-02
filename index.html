@@ -4,11 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Speed Reader</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
+    
     <style>
         body {
             background-color: black;
             color: white;
-            font-family: Arial, sans-serif;
+            /* Changed to Montserrat to match your image! */
+            font-family: 'Montserrat', sans-serif; 
             margin: 0;
             display: flex;
             flex-direction: column;
@@ -16,20 +21,49 @@
             justify-content: center;
             height: 100vh;
         }
+        #text-input {
+            width: 80%;
+            max-width: 600px;
+            height: 150px;
+            background-color: #222;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: Arial, sans-serif; /* Kept text box as Arial for easy reading while pasting */
+            font-size: 12pt;
+            margin-bottom: 2rem;
+            resize: vertical;
+        }
+        #text-input::placeholder {
+            color: #888;
+        }
+        #display-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 80px;
+        }
         #word-display {
-            font-size: 16pt;
-            min-height: 24pt;
+            font-size: 32pt; /* Bumped up the size a bit for Montserrat */
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 2rem;
             letter-spacing: 1px;
+        }
+        #progress-counter {
+            margin-top: 10px;
+            font-size: 10pt;
+            color: #666;
+            font-family: Montserrat, sans-serif;
+            display: none; /* Hidden until we hit play */
         }
         .controls {
             display: flex;
             gap: 15px;
             align-items: center;
             font-size: 14pt;
+            margin-top: 8rem;
         }
         button, select {
             padding: 8px 16px;
@@ -39,6 +73,7 @@
             color: white;
             border: 1px solid #555;
             border-radius: 4px;
+            font-family: 'Montserrat', sans-serif;
         }
         button:hover, select:hover {
             background-color: #555;
@@ -47,7 +82,12 @@
 </head>
 <body>
 
-    <div id="word-display">Ready?</div>
+    <textarea id="text-input" placeholder="Paste the text you want to read right here..."></textarea>
+    
+    <div id="display-container">
+        <div id="word-display">Ready?</div>
+        <div id="progress-counter">Word 0 of 0</div>
+    </div>
     
     <div class="controls">
         <button id="play-pause-btn">Play</button>
@@ -64,16 +104,71 @@
     </div>
 
     <script>
-        const words = ["T<span style='color: red;'>h</span>is", "i<span style='color: red;'>s</span>", "<span style='color: red;'>a</span>", "demons<span style='color: red;'>t</span>ration", "<span style='color: red;'>o</span>f", "t<span style='color: red;'>h</span>e", "ra<span style='color: red;'>p</span>id", "ser<span style='color: red;'>i</span>al", "vi<span style='color: red;'>s</span>ual", "presen<span style='color: red;'>t</span>ation", "sy<span style='color: red;'>s</span>tem", "Not<span style='color: red;'>i</span>ce", "h<span style='color: red;'>o</span>w", "t<span style='color: red;'>h</span>e", "mi<span style='color: red;'>d</span>dle", "let<span style='color: red;'>t</span>ers", "a<span style='color: red;'>r</span>e", "highl<span style='color: red;'>i</span>ghted", "i<span style='color: red;'>n</span>", "r<span style='color: red;'>e</span>d", "F<span style='color: red;'>o</span>r", "wo<span style='color: red;'>r</span>ds", "w<span style='color: red;'>i</span>th", "a<span style='color: red;'>n</span>", "e<span style='color: red;'>v</span>en", "num<span style='color: red;'>b</span>er", "<span style='color: red;'>o</span>f", "let<span style='color: red;'>t</span>ers", "t<span style='color: red;'>h</span>e", "high<span style='color: red;'>l</span>ight", "alter<span style='color: red;'>n</span>ates"];
+        let words = [];
         let currentIndex = 0;
         let isPlaying = false;
         let intervalId = null;
         
+        const textInput = document.getElementById('text-input');
         const displayElement = document.getElementById('word-display');
+        const progressCounter = document.getElementById('progress-counter');
         const playPauseBtn = document.getElementById('play-pause-btn');
         const restartBtn = document.getElementById('restart-btn');
         const wpmSelect = document.getElementById('wpm');
         
+        function processText(text) {
+            const rawWords = text.trim().split(/\s+/);
+            let processed = [];
+            let evenAlt = 0;
+            
+            for (let word of rawWords) {
+                if (word.length === 0) continue;
+                
+                let firstIdx = -1;
+                let lastIdx = -1;
+                
+                // This logic successfully ignores commas, semicolons, quotes, etc!
+                for (let i = 0; i < word.length; i++) {
+                    if (/[a-zA-Z0-9]/.test(word[i])) {
+                        if (firstIdx === -1) firstIdx = i;
+                        lastIdx = i;
+                    }
+                }
+                
+                if (firstIdx === -1) {
+                    processed.push(word);
+                    continue;
+                }
+                
+                let n = lastIdx - firstIdx + 1;
+                let coreMid;
+                
+                if (n % 2 !== 0) {
+                    coreMid = Math.floor(n / 2);
+                } else {
+                    if (evenAlt === 0) {
+                        coreMid = (n / 2) - 1;
+                        evenAlt = 1;
+                    } else {
+                        coreMid = n / 2;
+                        evenAlt = 0;
+                    }
+                }
+                
+                let actualMid = firstIdx + coreMid;
+                
+                let formattedWord = word.substring(0, actualMid) + 
+                                    "<span style='color: red;'>" + word.charAt(actualMid) + "</span>" + 
+                                    word.substring(actualMid + 1);
+                processed.push(formattedWord);
+            }
+            return processed;
+        }
+
+        function updateCounter() {
+            progressCounter.innerText = `Word ${currentIndex} of ${words.length}`;
+        }
+
         function showNextWord() {
             if (currentIndex >= words.length) {
                 pause();
@@ -82,17 +177,30 @@
             }
             displayElement.innerHTML = words[currentIndex];
             currentIndex++;
+            updateCounter();
         }
         
         function play() {
-            if (currentIndex >= words.length) currentIndex = 0; // reset if at end
+            if (currentIndex === 0) {
+                const text = textInput.value;
+                if (!text.trim()) {
+                    displayElement.innerHTML = "Please paste some text first!";
+                    return;
+                }
+                words = processText(text);
+                textInput.style.display = 'none';
+                progressCounter.style.display = 'block'; // Show counter
+            }
+
+            if (currentIndex >= words.length) currentIndex = 0; 
+            
             isPlaying = true;
             playPauseBtn.innerText = "Pause";
             
             const wpm = parseInt(wpmSelect.value);
-            const msPerWord = 60000 / wpm; // 60,000 ms in a minute
+            const msPerWord = 60000 / wpm; 
             
-            showNextWord(); // Show immediately
+            showNextWord(); 
             intervalId = setInterval(showNextWord, msPerWord);
         }
         
@@ -110,13 +218,26 @@
         restartBtn.addEventListener('click', () => {
             pause();
             currentIndex = 0;
+            words = []; 
             displayElement.innerHTML = "Ready?";
+            textInput.style.display = 'block';
+            progressCounter.style.display = 'none'; // Hide counter
         });
         
         wpmSelect.addEventListener('change', () => {
             if (isPlaying) {
                 pause();
                 play();
+            }
+        });
+
+        // Optional: Press Spacebar to Play/Pause
+        document.addEventListener('keydown', (event) => {
+            // Only trigger if we aren't typing in the text box!
+            if (event.code === 'Space' && document.activeElement !== textInput) {
+                event.preventDefault(); // Prevents the page from scrolling down
+                if (isPlaying) pause();
+                else play();
             }
         });
     </script>
