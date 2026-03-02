@@ -1,4 +1,5 @@
 import json
+import re
 
 def process_text(text):
     # Split by whitespace (\s) or any common punctuation: . , ! ? ; : " ( ) [ ] { }
