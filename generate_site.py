@@ -1,7 +1,10 @@
 import json
 
 def process_text(text):
-    words = text.split()
+    # Split by whitespace (\s) or any common punctuation: . , ! ? ; : " ( ) [ ] { }
+    # We deliberately leave out the apostrophe (') so words like "don't" stay intact.
+    # The list comprehension at the end filters out any empty strings.
+    words = [w for w in re.split(r'[\s.,!?;:"()\[\]{}]+', text) if w]
     processed_words = []
     even_alt = 0  # Toggle for alternating even-length middle letters
     
